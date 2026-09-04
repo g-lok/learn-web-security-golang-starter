@@ -215,7 +215,8 @@ func New(database *sql.DB, logger *logging.Logger, options Options) (*Applicatio
 		}
 	})
 
-	dynamicHandler := permissiveCORS(dynamicMux)
+	// dynamicHandler := permissiveCORS(dynamicMux)
+	dynamicHandler := applyMiddleware(dynamicMux, noSniff, permissiveCORS)
 
 	mainMux := http.NewServeMux()
 	mainMux.HandleFunc("GET /health", func(responseWriter http.ResponseWriter, _ *http.Request) {
@@ -235,7 +236,7 @@ func New(database *sql.DB, logger *logging.Logger, options Options) (*Applicatio
 
 	handler := applyMiddleware(
 		mainMux,
-		cspNonce,
+		cspNonce, noSniff,
 		recoverPanics(logger, renderer),
 	)
 	return &Application{Handler: handler, publicRoot: publicRoot}, nil
