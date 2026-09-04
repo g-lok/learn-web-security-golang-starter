@@ -61,6 +61,15 @@ func (handler *Handler) Page(responseWriter http.ResponseWriter, request *http.R
 	if !ok {
 		return
 	}
+
+	formattedExpAt := formatTimestamp(current.Session.ExpiresAt)
+	fields := map[string]any{
+		"userId":    current.Session.UserID,
+		"email":     current.User.Email,
+		"expiresAt": formattedExpAt,
+	}
+
+	handler.logger.Event("account_accessed", fields)
 	if err := handler.renderPage(responseWriter, http.StatusOK, current, ""); err != nil {
 		handler.internalError(responseWriter, request, err)
 	}
