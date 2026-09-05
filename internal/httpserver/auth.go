@@ -238,6 +238,24 @@ func (handler *authHandler) Logout(responseWriter http.ResponseWriter, request *
 		handler.internalError(responseWriter, request, err)
 		return
 	}
+	sesh, valid, err := sessions.Current(request, handler.accounts)
+	if err != nil {
+		handler.internalError(responseWriter, request, err)
+		return
+	}
+	if !valid {
+		sessions.ClearCookie(responseWriter)
+		if challengeToken != "" {
+			clearTOTPLoginChallengeCookie(responseWriter)
+		}
+		http.Redirect(responseWriter, request, "/", http.StatusFound)
+		return
+	}
+	err = handler.accounts.RevokeSession(request.Context(), sesh.Session.Token)
+	if err != nil {
+		handler.internalError(responseWriter, request, err)
+		return
+	}
 	sessions.ClearCookie(responseWriter)
 	if challengeToken != "" {
 		clearTOTPLoginChallengeCookie(responseWriter)
