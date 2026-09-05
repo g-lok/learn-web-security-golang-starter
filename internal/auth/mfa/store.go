@@ -129,6 +129,32 @@ func verifyAt(code, secret string, timestamp time.Time) bool {
 }
 
 func (store *Store) VerifyAndConsume(ctx context.Context, userID int64, code, secret string) (bool, error) {
+	now := store.now()
+	unixTime := now.Unix()
+	timeStep := unixTime / totpPeriodSeconds
+
+	verified := verifyAt(code, secret, now)
+	if !verified {
+		errMsg := errors.New("totp failed")
+		return false, errMsg
+	}
+
+	totpStepParams := dbgen.ConsumeTOTPStepParams{
+		TimeStep: &timeStep,
+		UserID:   userID,
+	}
+	totpRow, err := store.queries.ConsumeTOTPStep(ctx, totpStepParams)
+	if err != nil {
+		return false, err
+	}
+	totpRowsAffected, err := totpRow.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	if totpRowsAffected != 1 {
+		return false, nil
+	}
+
 	return verifyAt(code, secret, store.now()), nil
 }
 
