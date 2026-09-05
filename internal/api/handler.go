@@ -111,6 +111,7 @@ func (handler *Handler) WarehouseOrders(responseWriter http.ResponseWriter, requ
 		httpx.RespondWithJSON(responseWriter, http.StatusForbidden, jsonErr)
 		return
 	}
+
 	orders, err := handler.orderStore.ListAll(request.Context())
 	if err != nil {
 		handler.internalError(responseWriter, request, err)
