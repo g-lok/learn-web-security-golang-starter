@@ -6,6 +6,10 @@ Bearly Secure is the intentionally vulnerable starter app for Learn Web Security
 >
 > This README describes the freshly cloned starter project from lesson 1.2. Course assignments will change the app's behavior, but this file remains a reference for the initial baseline.
 
+## Streak
+
+blah
+
 ## Requirements
 
 - Go 1.27.0 or newer
