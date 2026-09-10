@@ -8,7 +8,7 @@ Bearly Secure is the intentionally vulnerable starter app for Learn Web Security
 
 ## Streak
 
-blah blah blah
+blah blah blah blah
 
 ## Requirements
 
