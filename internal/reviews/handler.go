@@ -1,6 +1,7 @@
 package reviews
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -101,7 +102,12 @@ func (handler *Handler) Edit(responseWriter http.ResponseWriter, request *http.R
 	if !found {
 		return
 	}
-	if err := handler.renderForm(responseWriter, http.StatusOK, current, review, ""); err != nil {
+	err := handler.confirmOwnership(current.Session.UserID, review.UserID)
+	if err != nil {
+		handler.reviewNotFound(responseWriter)
+		return
+	}
+	if err = handler.renderForm(responseWriter, http.StatusOK, current, review, ""); err != nil {
 		handler.internalError(responseWriter, request, err)
 	}
 }
@@ -113,6 +119,11 @@ func (handler *Handler) Update(responseWriter http.ResponseWriter, request *http
 	}
 	review, found := handler.requireReview(responseWriter, request)
 	if !found {
+		return
+	}
+	err := handler.confirmOwnership(current.Session.UserID, review.UserID)
+	if err != nil {
+		handler.reviewNotFound(responseWriter)
 		return
 	}
 	ratingValue, ratingErr := httpx.FormValue(request, "rating")
@@ -151,7 +162,12 @@ func (handler *Handler) Delete(responseWriter http.ResponseWriter, request *http
 	if !found {
 		return
 	}
-	if err := handler.store.Delete(request.Context(), review.ID); err != nil {
+	err := handler.confirmOwnership(current.Session.UserID, review.UserID)
+	if err != nil {
+		handler.reviewNotFound(responseWriter)
+		return
+	}
+	if err = handler.store.Delete(request.Context(), review.ID); err != nil {
 		handler.internalError(responseWriter, request, err)
 		return
 	}
@@ -234,4 +250,12 @@ func parseRating(value string) (int64, bool) {
 
 func parseBody(value string) (string, bool) {
 	return value, value != ""
+}
+
+func (handler *Handler) confirmOwnership(sessionUserID, resourceUserID int64) error {
+	if sessionUserID != resourceUserID {
+		errMsg := errors.New("404")
+		return errMsg
+	}
+	return nil
 }
