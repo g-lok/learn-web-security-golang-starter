@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/bootdotdev/learn-web-security/internal/accounts"
 	"github.com/bootdotdev/learn-web-security/internal/auth/sessions"
@@ -249,7 +251,11 @@ func parseRating(value string) (int64, bool) {
 }
 
 func parseBody(value string) (string, bool) {
-	return value, value != ""
+	trimmed := strings.TrimSpace(value)
+	if utf8.RuneCount([]byte(trimmed)) > 1000 || trimmed == "" {
+		return "", false
+	}
+	return trimmed, true
 }
 
 func (handler *Handler) confirmOwnership(sessionUserID, resourceUserID int64) error {
