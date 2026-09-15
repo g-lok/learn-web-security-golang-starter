@@ -206,11 +206,8 @@ func isInsideDir(extractionDirectory, entryDestination string) bool {
 		relativePath == "" ||
 		relativePath == ".." ||
 		relativePath == "." ||
-		strings.HasPrefix(relativePath, ".."+string(filepath.Separator)) ||
-		filepath.IsAbs(relativePath) {
-		fmt.Fprintf(os.Stderr, "DEBUG rel=%q valid=false\n", relativePath)
+		strings.HasPrefix(relativePath, ".."+string(filepath.Separator)) {
 		return false
 	}
-	fmt.Fprintf(os.Stderr, "DEBUG rel=%q valid=true\n", relativePath)
 	return true
 }
