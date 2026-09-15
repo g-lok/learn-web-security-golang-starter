@@ -71,13 +71,21 @@ func ExtractTaxDocumentArchive(encryptionKeyring Keyring, contents []byte, extra
 	importDirectory := filepath.Join(extractionDirectory, identifier)
 	plannedEntries := make([]plannedArchiveEntry, 0, len(archiveReader.File))
 	for _, entry := range archiveReader.File {
-		entryDestination := filepath.Join(importDirectory, entry.Name)
 		if isIgnoredArchiveEntry(entry.Name) {
 			continue
 		}
+		entryDestination := filepath.Join(importDirectory, entry.Name)
 		if strings.HasSuffix(entry.Name, "/") {
 			plannedEntries = append(plannedEntries, plannedArchiveEntry{directory: true, destination: entryDestination})
 			continue
+		}
+		if entry.Mode()&os.ModeSymlink != 0 ||
+			filepath.IsAbs(entry.Name) ||
+			strings.Contains(entry.Name, "\\") {
+			return ExtractedTaxDocumentArchive{}, &ArchiveImportError{Message: "Choose a valid ZIP archive.", StatusCode: 400}
+		}
+		if !isInsideDir(importDirectory, entryDestination) {
+			return ExtractedTaxDocumentArchive{}, &ArchiveImportError{Message: "Choose a valid ZIP archive.", StatusCode: 400}
 		}
 		entryContents, err := readArchiveEntry(entry)
 		if err != nil {
@@ -190,4 +198,19 @@ func discardArchiveAfterWriteFailure(archive ExtractedTaxDocumentArchive, err er
 		return ExtractedTaxDocumentArchive{}, errors.Join(err, discardErr)
 	}
 	return ExtractedTaxDocumentArchive{}, err
+}
+
+func isInsideDir(extractionDirectory, entryDestination string) bool {
+	relativePath, err := filepath.Rel(extractionDirectory, entryDestination)
+	if err != nil ||
+		relativePath == "" ||
+		relativePath == ".." ||
+		relativePath == "." ||
+		strings.HasPrefix(relativePath, ".."+string(filepath.Separator)) ||
+		filepath.IsAbs(relativePath) {
+		fmt.Fprintf(os.Stderr, "DEBUG rel=%q valid=false\n", relativePath)
+		return false
+	}
+	fmt.Fprintf(os.Stderr, "DEBUG rel=%q valid=true\n", relativePath)
+	return true
 }
